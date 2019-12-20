@@ -19,11 +19,25 @@ def getQueryColumn(storedProcedure, columnNumber):
     cursor = cnx.cursor()
     cursor.callproc(storedProcedure)
     for result in cursor.stored_results():
-        i = 1
+        resultAsList = []
         for columnIndex in result.fetchall():
-            print(str(i) + ') ' + columnIndex[columnNumber])
-            i += 1
+            resultAsList.append(columnIndex[columnNumber])
+        return resultAsList
     cursor.close
+
+def listCombiner(list1, list2):
+    combinedList = []
+    for itemA, itemB in zip(list1, list2):
+        combinedList.append(itemA + ', '+ itemB)
+    return combinedList
+
+def displayResultSet(resultSet, quitMenu=False):
+    i=1
+    for result in resultSet:
+        print(str(i) + ') ' + result)
+        i += 1
+    if quitMenu == True:
+        print(str(i) + ') Quit to menu?')    
 
 def libMenuSelector(screenCode):
     case={
@@ -59,17 +73,11 @@ def lib1():
 
     print("1) Enter Branch you manage \n2) Quit to previous \n")
     userSelection = input()
-    print(selectionHandler(userSelection) + '<---this is the user selection')
     libMenuSelector(selectionHandler(userSelection))
 
 def lib2():
-    def selectionHandler(selection):
-        return {
-            '1':'lib2',
-            '2':'main'
-        }.get(selection, 'lib1')
-
-    print(str(getQueryColumn('getBranchNames', 0)) +', ' + str(getQueryColumn('getBranchAddress', 0)))  
+    branchNameList = getQueryColumn('getBranchNames', 0)
+    displayResultSet(listCombiner(branchNameList, getQueryColumn('getBranchAddress', 0)), True)
 
 #def lib3():
 def borr1():
@@ -80,6 +88,8 @@ def admin():
 
 libMenuSelector(0)
 #preparedStatement('Select branchname from tbl_library_branch')
-print('---------SINGLE DATA COLUMN TEST-------------')
-#getQueryColumn('getBranches', 0)
+#print('---------SINGLE DATA COLUMN TEST-------------')
+#displayResultSet(getQueryColumn('getBranches', 0), True)
+
+##### FIX NESTED FUNCTION CALLS -> state maybe##########
 cnx.close()
