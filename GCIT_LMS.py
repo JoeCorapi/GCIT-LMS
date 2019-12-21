@@ -21,13 +21,13 @@ def callStoredProcedure(storedProcedure, args=()):
     cursor.callproc(storedProcedure, args)   
     cursor.close 
 
-def getQueryColumn(storedProcedure, args=()): 
+def getQueryColumn(storedProcedure, column, args=()): 
     cursor = cnx.cursor()
     cursor.callproc(storedProcedure, args)
     for result in cursor.stored_results():
         resultAsList = []
         for columnIndex in result.fetchall():
-            resultAsList.append(columnIndex[0])
+            resultAsList.append(columnIndex[column])
         return resultAsList
     cursor.close
 
@@ -108,8 +108,8 @@ def lib1():
     return (activeState)
 
 def lib2():
-    branchNameList = getQueryColumn('getBranchNames')
-    branchAddressList = getQueryColumn('getBranchAddress')
+    branchNameList = getQueryColumn('getBranches',0)
+    branchAddressList = getQueryColumn('getBranches',1)
     displayResultSet(listCombiner(branchNameList, branchAddressList, ', '), True)
 
     userSelection = getValidInput(len(branchNameList)+1)
@@ -126,12 +126,11 @@ def lib2():
 def lib3(name, address):
     branchName = name
     branchAddress = address
-    print('prename' + branchName)
-    print('preaddress'+ branchAddress)
-    print(getQueryColumn('getBranchId', (branchName, branchAddress))[0])
-    branchId = getQueryColumn('getBranchId', (branchName, branchAddress))[0]
+    branchId = getQueryColumn('getBranchId', 0, (branchName, branchAddress))[0]
 
     global activeState
+    global cnx
+
     while activeState == State.LIB3:
         print('1) Update the details of the Library \n2) Add copies of Book to the Branch \n3) Quit to previous \n')
         userSelection = getValidInput(3)
@@ -160,23 +159,37 @@ def lib3(name, address):
                     print(branchAddress)
             
             callStoredProcedure('updateBranch', (branchName, branchAddress, branchId))
-            global cnx
             cnx.commit()
-            print('New Branchname and address: ' + branchName + branchAddress)
 
-            print('end of option1')
         elif userSelection ==2:
-            bookTitlesList = getQueryColumn('getBookTitles')
-            bookAuthorsList = getQueryColumn('getBookAuthors')
+            bookTitlesList = getQueryColumn('getAllBooks',0)
+            bookAuthorsList = getQueryColumn('getAllBooks',1)
 
-            print('Pick the Book you want to add copies of to your branch:')
+            print('Pick the Book you want to add copies of to your branch:\n')
             displayResultSet(listCombiner(bookTitlesList, bookAuthorsList, ' by '), True)
 
-            userSelection = getValidInput(len(branchNameList)+1)
-            bookID = getQueryColumn('getBookID')
-
-            if userSelection == (len(branchNameList)+1):
+            userSelection = getValidInput(len(bookTitlesList)+1)
+            if userSelection == (len(bookTitlesList)+1):
                 return
+
+            bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
+
+            numCopies = getQueryColumn('getNumCopies', 0, (branchId, bookId))[0]
+            print('Existing number of copies: '+ str(numCopies)+'\n')
+
+            while True:
+                copies = input('Enter new number of copies: \n')
+                try:
+                    validatedCopies = int(copies)
+                    if validatedCopies < 0:  
+                        print('Input must be a non-negative integer, try again')
+                        continue
+                    break
+                except ValueError:
+                    print('Input must be a non-negative integer, try again')     
+            
+            callStoredProcedure('updateNumCopies', (bookId, branchId, validatedCopies))
+            cnx.commit()
 
         else:
             activeState = State.LIB2
