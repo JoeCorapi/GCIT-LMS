@@ -15,7 +15,12 @@ def preparedStatement(statement):
         print(str(i) + ') ' + row[0])
         i += 1
     cursor.close
-    
+
+def callStoredProcedure(storedProcedure, args=()):
+    cursor = cnx.cursor()
+    cursor.callproc(storedProcedure, args)   
+    cursor.close 
+
 def getQueryColumn(storedProcedure, args=()): 
     cursor = cnx.cursor()
     cursor.callproc(storedProcedure, args)
@@ -26,10 +31,10 @@ def getQueryColumn(storedProcedure, args=()):
         return resultAsList
     cursor.close
 
-def listCombiner(list1, list2):
+def listCombiner(list1, list2, joinForm):
     combinedList = []
     for itemA, itemB in zip(list1, list2):
-        combinedList.append(itemA + ', '+ itemB)
+        combinedList.append(itemA + joinForm + itemB)
     return combinedList
 
 def displayResultSet(resultSet, quitMenu=False):
@@ -105,9 +110,8 @@ def lib1():
 def lib2():
     branchNameList = getQueryColumn('getBranchNames')
     branchAddressList = getQueryColumn('getBranchAddress')
-    displayResultSet(listCombiner(branchNameList, branchAddressList), True)
+    displayResultSet(listCombiner(branchNameList, branchAddressList, ', '), True)
 
-    print(branchNameList)
     userSelection = getValidInput(len(branchNameList)+1)
 
     global activeState
@@ -117,27 +121,68 @@ def lib2():
         return(activeState)
     else:
         activeState = State.LIB3
-        while activeState == State.LIB3:
-            lib3(branchNameList[userSelection-1], branchAddressList[userSelection-1])
+        lib3(branchNameList[userSelection-1], branchAddressList[userSelection-1])
 
-def lib3(branchName, branchAddress):
-    branchId = getQueryColumn('getBranchID', (branchName, branchAddress))[0]
+def lib3(name, address):
+    branchName = name
+    branchAddress = address
+    print('prename' + branchName)
+    print('preaddress'+ branchAddress)
+    print(getQueryColumn('getBranchId', (branchName, branchAddress))[0])
+    branchId = getQueryColumn('getBranchId', (branchName, branchAddress))[0]
 
     global activeState
+    while activeState == State.LIB3:
+        print('1) Update the details of the Library \n2) Add copies of Book to the Branch \n3) Quit to previous \n')
+        userSelection = getValidInput(3)
 
-    print('1) Update the details of the Library \n2) Add copies of Book to the Branch \n3) Quit to previous \n')
-    userSelection = getValidInput(3)
+        if userSelection == 1:
+            print('You have chosen to update the Branch with Branch Id: '+str(branchId) +' and Branch Name: '+branchName+'.\nEnter ‘quit’ at any prompt to cancel operation\n')
+            print('Please enter new branch name or enter N/A for no change:')
 
-    if userSelection == 1:
-        print('You have chosen to update the Branch with Branch Id: '+str(branchId) +' and Branch Name: '+branchName+'.\n Enter ‘quit’ at any prompt to cancel operation')
-        updatedBranchName = input('Please enter new branch name or enter N/A for no change: \n')
-    elif userSelection ==2:
-        pass
-    else:
-        activeState = State.LIB2
+            userSelection = input()
+
+            if userSelection=='quit':
+                return
+            else:
+                if userSelection=='N/A':
+                    pass
+                else:
+                    branchName= userSelection
+                print('Please enter new branch address or enter N/A for no change:')
+                userSelection = input()    
+                if userSelection=='quit':
+                    return
+                elif userSelection=='N/A':
+                    pass
+                else:
+                    branchAddress = userSelection
+                    print(branchAddress)
+            
+            callStoredProcedure('updateBranch', (branchName, branchAddress, branchId))
+            global cnx
+            cnx.commit()
+            print('New Branchname and address: ' + branchName + branchAddress)
+
+            print('end of option1')
+        elif userSelection ==2:
+            bookTitlesList = getQueryColumn('getBookTitles')
+            bookAuthorsList = getQueryColumn('getBookAuthors')
+
+            print('Pick the Book you want to add copies of to your branch:')
+            displayResultSet(listCombiner(bookTitlesList, bookAuthorsList, ' by '), True)
+
+            userSelection = getValidInput(len(branchNameList)+1)
+            bookID = getQueryColumn('getBookID')
+
+            if userSelection == (len(branchNameList)+1):
+                return
+
+        else:
+            activeState = State.LIB2
+            return(activeState)
 
     
-
 def borr1():
     print('Welcome Borrower')
 #def borr2():
