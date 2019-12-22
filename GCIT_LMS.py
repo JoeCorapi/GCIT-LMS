@@ -379,9 +379,10 @@ def admin():
         userSelection = getValidInput(3)
 
         if userSelection == 1:
+            publisherName = validateString('Enter publisher name: ')
             publisherAddress = validateString('Enter publisher address: ')
             publisherPhone = validateInt('Enter publisher phone number: ')
-            callStoredProcedure('adminAddPub', (publisherAddress, publisherPhone))
+            callStoredProcedure('adminAddPub', (publisherName, publisherAddress, publisherPhone))
             cnx.commit()
 
         elif userSelection == 2:
