@@ -358,10 +358,10 @@ def admin():
         elif userSelection == 2:
             bookId = validateInt('Enter book ID: ')
             authorId = validateInt('Enter author ID: ')
-            bookTitle = validateString('Enter book title: ')
-            bookAuthor = validateString('Enter book author: ')
+            bookTitle = validateString('Enter new book title: ')
+            bookAuthor = validateString('Enter new book author: ')
             bookPublisherId = validateInt('Enter book publisher ID: ')
-            callStoredProcedure('adminUpdateBa', (bookId, authorId, bookTitle, bookAuthor, bookPublisherId))
+            callStoredProcedure('adminUpdateBa', (bookId, authorId, bookPublisherId, bookAuthor, bookTitle))
             cnx.commit()
 
         elif userSelection == 3:
@@ -386,9 +386,9 @@ def admin():
 
         elif userSelection == 2:
             publisherId = validateInt('Enter publisher ID: ')
-            publisherName = validateString('Enter publisher name: ')
-            publisherAddress = validateString('Enter publisher address: ')
-            publisherPhone = validateInt('Enter publisher phone: ')
+            publisherName = validateString('Enter new publisher name: ')
+            publisherAddress = validateString('Enter new publisher address: ')
+            publisherPhone = validateInt('Enter new publisher phone: ')
             callStoredProcedure('adminUpdatePub', (publisherId, publisherName, publisherAddress, publisherPhone))
             cnx.commit()
 
@@ -413,8 +413,8 @@ def admin():
 
         elif userSelection == 2:
             branchId = validateInt('Enter branch ID: ')
-            branchName = validateString('Enter branch name: ')
-            branchAddress = validateString('Enter branch address: ')
+            branchName = validateString('Enter new branch name: ')
+            branchAddress = validateString('Enter new branch address: ')
             callStoredProcedure('adminUpdateBr', (branchId, branchName, branchAddress))
             cnx.commit()
 
@@ -469,9 +469,7 @@ def libraryManagementSystemApplication():
     while True:
         libraryMenuHandler(activeState)
 
-#activeState = State.MAIN
-#libraryManagementSystemApplication()
-
-validateDate()
+activeState = State.MAIN
+libraryManagementSystemApplication()
 
 cnx.close()
