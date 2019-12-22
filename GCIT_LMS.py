@@ -1,4 +1,5 @@
 from enum import Enum
+import datetime
 import mysql.connector
 
 cnx = mysql.connector.connect(user='root', password='jacmsq5903',
@@ -45,9 +46,13 @@ def displayResultSet(resultSet, quitMenu=False):
     if quitMenu == True:
         print(str(i) + ') Quit to menu?')    
 
-def validateInt():
+def validateInt(prompt=''):
     while True:
-        validatable = input()
+        if prompt:
+           validatable = input(prompt) 
+        else: 
+            validatable = input()
+
         try:
             validated = int(validatable)
             if validated < 0:  
@@ -56,6 +61,29 @@ def validateInt():
             return validated
         except ValueError:
             print('Input must consist solely of only numbers')  
+
+def validateString(prompt=''):
+    while True:
+        if prompt:
+            validatable = input(prompt) 
+        else: 
+            validatable = input()
+
+        if not validatable:  
+            print('Input must be a non-empty string')
+            continue
+        return validatable    
+
+def validateDate():   
+    while True:
+        date = input('Enter new due date: ')  
+        try:
+            validatedDate = datetime.datetime.strptime(date, '%Y-%M-%D %H:%M')
+        except ValueError:
+            print("Incorrect data format, should be YYYY-MM-DD HH:MM")
+        print(validatedDate)
+    return validatedDate
+
 
 def getValidInput(validLength):
     while True:
@@ -70,7 +98,7 @@ def getValidInput(validLength):
         else:
             break
     return userSelection
-
+            
 class State(Enum):
     MAIN = 1
     LIB1 = 2
@@ -86,8 +114,8 @@ def libraryMenuHandler(screenCode):
         State.LIB1: lib1,
         State.LIB2: lib2,
         State.LIB3: lib3,
-        State.BORR1: borr1
-        #'admin': admin
+        State.BORR1: borr1,
+        State.ADMIN: admin
         }
     case.get(screenCode, State.MAIN)()
 
@@ -288,7 +316,135 @@ def borr1():
             return(activeState)
 
 def admin():  
-    print('Welcome Admin')  
+    print('----- Administrator console -----\n') 
+    print('1) Add/Update/Delete Book and Author')
+    print('2) Add/Update/Delete Publishers')
+    print('3) Add/Update/Delete Library Branches')
+    print('4) Add/Update/Delete Borrwers')
+    print('5) Over-ride Due Date for a Book Loan')
+    print('6) Quit to menu')
+    
+    userSelection = getValidInput(6)
+    global cnx
+
+    ##BOOK AUTHOR UPDATES##
+    if userSelection == 1:
+        print('1) Add Book and Author:')
+        print('2) Update Book and Author:')
+        print('3) Delete Book and Author:')
+
+        userSelection = getValidInput(3)
+
+        if userSelection == 1:
+            bookTitle = validateString('Enter book title: ')
+            bookAuthor = validateString('Enter book author: ')
+            bookPublisherId = validateInt('Enter book publisher ID: ')
+            callStoredProcedure('adminAddBa', (bookTitle, bookAuthor, bookPublisherId))
+            cnx.commit()
+
+        elif userSelection == 2:
+            bookId = validateInt('Enter book ID: ')
+            authorId = validateInt('Enter author ID: ')
+            bookTitle = validateString('Enter book title: ')
+            bookAuthor = validateString('Enter book author: ')
+            bookPublisherId = validateInt('Enter book publisher ID: ')
+            callStoredProcedure('adminUpdateBa', (bookId, authorId, bookTitle, bookAuthor, bookPublisherId))
+            cnx.commit()
+
+        elif userSelection == 3:
+            bookId = validateInt('Enter book ID: ')
+            authorId = validateInt('Enter author ID: ') 
+            callStoredProcedure('adminDeleteBa', (bookId, authorId))
+            cns.commit()
+        
+    ### PUBLISHERS UPDATES ###
+    elif userSelection == 2:
+        print('1) Add Publishers:')
+        print('2) Update Publishers:')
+        print('3) Delete Publishers:')
+
+        userSelection = getValidInput(3)
+
+        if userSelection == 1:
+            publisherAddress = validateString('Enter publisher address: ')
+            publisherPhone = validateInt('Enter publisher phone number: ')
+            callStoredProcedure('adminAddPub', (publisherAddress, publisherPhone))
+            cnx.commit()
+
+        elif userSelection == 2:
+            publisherId = validateInt('Enter publisher ID: ')
+            publisherName = validateString('Enter publisher name: ')
+            publisherAddress = validateString('Enter publisher address: ')
+            publisherPhone = validateInt('Enter publisher phone: ')
+            callStoredProcedure('adminUpdatePub', (publisherId, publisherName, publisherAddress, publisherPhone))
+            cnx.commit()
+
+        elif userSelection == 3:
+            publisherId = validateInt('Enter publisher ID: ')
+            callStoredProcedure('adminDeletePub', (publisherId,))
+            cnx.commit()
+
+    ## BRANCH UPDATES ##
+    elif userSelection == 3:
+        print('1) Add Library Branches:')
+        print('2) Update Library Branches:')
+        print('3) Delete Library Branches:')
+
+        userSelection = getValidInput(3)
+
+        if userSelection == 1:
+            branchName = validateString('Enter branch name: ')
+            branchAddress = validateString('Enter branch address: ')
+            callStoredProcedure('adminAddBr', (branchName, branchAddress))
+            cnx.commit()
+
+        elif userSelection == 2:
+            branchId = validateInt('Enter branch ID: ')
+            branchName = validateString('Enter branch name: ')
+            branchAddress = validateString('Enter branch address: ')
+            callStoredProcedure('adminUpdateBr', (branchId, branchName, branchAddress))
+            cnx.commit()
+
+        elif userSelection == 3:
+            branchId = validateInt('Enter branch ID: ')
+            callStoredProcedure('adminDeleteBr', (branchId,))
+            cnx.commit()        
+
+    ## BORROWERS UPDATES ##
+    elif userSelection == 4:
+        print('1) Add Borrowers:')
+        print('2) Update Borrowers:')
+        print('3) Delete Borrowers:')
+
+        userSelection = getValidInput(3)
+
+        if userSelection == 1:
+            cardNo = validateInt('Enter borrower card number: ')
+            borrowerName = validateString('Enter borrower name: ')
+            borrowerAddress = validateString('Enter borrower address: ')
+            borrowerPhone = validateInt('Enter borrower phone: ')
+            callStoredProcedure('adminAddBorr', (cardNo, borrowerName, borrowerAddress, borrowerPhone))
+            cnx.commit()
+
+        elif userSelection == 2:
+            cardNo = validateInt('Enter borrower card number: ')
+            borrowerName = validateString('Enter borrower name: ')
+            borrowerAddress = validateString('Enter borrower address: ')
+            borrowerPhone = validateInt('Enter borrower phone: ')
+            callStoredProcedure('adminUpdateBorr', (cardNo, borrowerName, borrowerAddress, borrowerPhone))
+            cnx.commit()
+
+        elif userSelection == 3:
+            cardNo = validateInt('Enter borrower card number: ')
+            callStoredProcedure('adminDeleteBorr', (cardNo,))
+            cnx.commit()                
+
+    ### DUE DATE UPDATES##
+    elif userSelection == 5:
+        validateDate()
+    else:
+        activeState = State.MAIN
+        return activeState
 
 def libraryManagementSystemApplication():
     while True:
@@ -297,10 +453,4 @@ def libraryManagementSystemApplication():
 activeState = State.MAIN
 libraryManagementSystemApplication()
 
-#displayResultSet(getQueryColumn('getBranchId', ('University Library', 'Boston')))
-#preparedStatement('Select branchname from tbl_library_branch')
-#print('---------SINGLE DATA COLUMN TEST-------------')
-#displayResultSet(getQueryColumn('getBranches', 0), True)
-
-##### FIX NESTED FUNCTION CALLS -> state maybe##########
 cnx.close()
