@@ -306,7 +306,7 @@ def borr1():
                 if userSelection == (len(bookTitlesList)+1):
                     continue
 
-                bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
+                bookId = getQueryColumn('getBookId', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
 
                 callStoredProcedure('returnBook', (bookId, branchId, cardNo))
                 cnx.commit()
@@ -326,6 +326,7 @@ def admin():
     
     userSelection = getValidInput(6)
     global cnx
+    global activeState
 
     ##BOOK AUTHOR UPDATES##
     if userSelection == 1:
@@ -337,9 +338,23 @@ def admin():
 
         if userSelection == 1:
             bookTitle = validateString('Enter book title: ')
-            bookAuthor = validateString('Enter book author: ')
-            bookPublisherId = validateInt('Enter book publisher ID: ')
-            callStoredProcedure('adminAddBa', (bookTitle, bookAuthor, bookPublisherId))
+
+            print('1) Choose an existing author \n2) Enter new author')
+            userSelection = getValidInput(2)
+            if userSelection == 1:
+                authorsList = getQueryColumn('getAllAuthors', 0)
+                displayResultSet(authorsList, True)
+                userSelection = getValidInput(len(authorsList)+1)
+                if userSelection == (len(authorsList)+1):
+                    activeState = State.ADMIN
+                    return(activeState)                                   
+                authorId = getQueryColumn('getAuthorId', 0, (authorsList[userSelection-1],))[0]
+                bookPublisherId = validateInt('Enter book publisher ID: ')
+                callStoredProcedure('adminAddNewBookOldAuth', (bookTitle, bookPublisherId, authorId))
+            else:
+                bookAuthor = validateString('Enter author name: ')
+                bookPublisherId = validateInt('Enter book publisher ID: ')
+                callStoredProcedure('adminAddNewBA', (bookTitle, bookAuthor, bookPublisherId))
             cnx.commit()
 
         elif userSelection == 2:
@@ -355,7 +370,7 @@ def admin():
             bookId = validateInt('Enter book ID: ')
             authorId = validateInt('Enter author ID: ') 
             callStoredProcedure('adminDeleteBa', (bookId, authorId))
-            cns.commit()
+            cnx.commit()
         
     ### PUBLISHERS UPDATES ###
     elif userSelection == 2:
@@ -441,7 +456,13 @@ def admin():
 
     ### DUE DATE UPDATES##
     elif userSelection == 5:
-        validateDate()
+        bookId = validateInt('Enter bookId: ')
+        branchId = validateInt('Enter branchId: ')
+        cardNo = validateInt('Enter cardNo: ')
+        dueDate = input('Enter new due date: ')      
+
+        callStoredProcedure('overrideDueDate', (bookId, branchId, cardNo, dueDate))
+        cnx.commit()
     else:
         activeState = State.MAIN
         return activeState
