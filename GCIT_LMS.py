@@ -68,14 +68,13 @@ class State(Enum):
     BORR2 = 6
     ADMIN =  7
 
-def libMenuSelector(screenCode):
+def libraryMenuHandler(screenCode):
     case={
         State.MAIN: main,
         State.LIB1: lib1,
         State.LIB2: lib2,
         State.LIB3: lib3,
-        #'borr1': borr1,
-        #'borr2': borr2,
+        State.BORR1: borr1
         #'admin': admin
         }
     case.get(screenCode, State.MAIN)()
@@ -108,8 +107,8 @@ def lib1():
     return (activeState)
 
 def lib2():
-    branchNameList = getQueryColumn('getBranches',0)
-    branchAddressList = getQueryColumn('getBranches',1)
+    branchNameList = getQueryColumn('getBranches', 0)
+    branchAddressList = getQueryColumn('getBranches', 1)
     displayResultSet(listCombiner(branchNameList, branchAddressList, ', '), True)
 
     userSelection = getValidInput(len(branchNameList)+1)
@@ -132,7 +131,7 @@ def lib3(name, address):
     global cnx
 
     while activeState == State.LIB3:
-        print('1) Update the details of the Library \n2) Add copies of Book to the Branch \n3) Quit to previous \n')
+        print('1) Update the details of the Library \n2) Add copies of a Book to the Branch \n3) Quit to previous \n')
         userSelection = getValidInput(3)
 
         if userSelection == 1:
@@ -142,16 +141,16 @@ def lib3(name, address):
             userSelection = input()
 
             if userSelection=='quit':
-                return
+                continue
             else:
                 if userSelection=='N/A':
                     pass
                 else:
-                    branchName= userSelection
+                    branchName = userSelection
                 print('Please enter new branch address or enter N/A for no change:')
                 userSelection = input()    
                 if userSelection=='quit':
-                    return
+                    continue
                 elif userSelection=='N/A':
                     pass
                 else:
@@ -170,7 +169,7 @@ def lib3(name, address):
 
             userSelection = getValidInput(len(bookTitlesList)+1)
             if userSelection == (len(bookTitlesList)+1):
-                return
+                continue
 
             bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
 
@@ -186,7 +185,7 @@ def lib3(name, address):
                         continue
                     break
                 except ValueError:
-                    print('Input must be a non-negative integer, try again')     
+                    print('Input must be a non-negative integer, please try again')     
             
             callStoredProcedure('updateNumCopies', (bookId, branchId, validatedCopies))
             cnx.commit()
@@ -195,16 +194,98 @@ def lib3(name, address):
             activeState = State.LIB2
             return(activeState)
 
-    
 def borr1():
-    print('Welcome Borrower')
-#def borr2():
+    cardNo = int(input('Enter your Card Number:\n'))
+    while cardNo not in getQueryColumn('getBorrowerCardNumbers', 0):
+        cardNo = int(input('The card number you entered is not in our system, please try again\nEnter your Card Number:\n'))
+
+    global activeState
+    global cnx
+
+    while True:
+        print('1) Check out a book\n2) Return a book\n3) Quit to previous \n')
+        userSeleciton = getValidInput(3)
+
+        ##CHECKOUT BOOKS
+        if userSeleciton == 1:
+            branchNameList = getQueryColumn('getBranches',0)
+            branchAddressList = getQueryColumn('getBranches',1)
+            displayResultSet(listCombiner(branchNameList, branchAddressList, ', '), True)
+
+            userSelection = getValidInput(len(branchNameList)+1)
+
+            branchName = branchNameList[userSelection-1]
+            branchAddress = branchAddressList[userSelection-1]
+
+            if userSelection == (len(branchNameList)+1):
+                activeState = State.BORR1
+                return(activeState)
+            else:
+                branchId = getQueryColumn('getBranchId', 0, (branchName, branchAddress))[0]
+
+                bookTitlesList = getQueryColumn('getBooksB', 0, (branchId,))
+                bookAuthorsList = getQueryColumn('getBooksB', 1, (branchId,))
+
+                print(bookTitlesList)
+                print(bookAuthorsList)
+
+                print('Pick the Book you want to check out:\n')
+                displayResultSet(listCombiner(bookTitlesList, bookAuthorsList, ' by '), True)
+
+                userSelection = getValidInput(len(bookTitlesList)+1)
+                if userSelection == (len(bookTitlesList)+1):
+                    continue
+
+                bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
+
+                callStoredProcedure('checkOutBook', (bookId, branchId, cardNo))
+                cnx.commit
+                print('Book checkout complete.')
+    ##RETURN BOOKS
+        elif userSeleciton == 2:
+            branchNameList = getQueryColumn('getBranches',0)
+            branchAddressList = getQueryColumn('getBranches',1)
+            displayResultSet(listCombiner(branchNameList, branchAddressList, ', '), True)
+
+            userSelection = getValidInput(len(branchNameList)+1)
+
+            branchName = branchNameList[userSelection-1]
+            branchAddress = branchAddressList[userSelection-1]
+
+            if userSelection == (len(branchNameList)+1):
+                activeState = State.BORR1
+                return(activeState)
+            else:
+                branchId = getQueryColumn('getBranchId', 0, (branchName, branchAddress))[0]
+
+                bookTitlesList = getQueryColumn('getBooksB', 0, (branchId,))
+                bookAuthorsList = getQueryColumn('getBooksB', 1, (branchId,))
+
+                print(bookTitlesList)
+                print(bookAuthorsList)
+
+                print('Pick the Book you want to check out:\n')
+                displayResultSet(listCombiner(bookTitlesList, bookAuthorsList, ' by '), True)
+
+                userSelection = getValidInput(len(bookTitlesList)+1)
+                if userSelection == (len(bookTitlesList)+1):
+                    continue
+
+                bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
+
+                callStoredProcedure('checkOutBook', (bookId, branchId, cardNo))
+                cnx.commit
+                print('Book checkout complete.')
+        else:
+            activeState = State.MAIN
+            return(activeState)
+
 def admin():  
     print('Welcome Admin')  
 
 def libraryManagementSystemApplication():
     while True:
-        libMenuSelector(activeState)
+        libraryMenuHandler(activeState)
 
 activeState = State.MAIN
 libraryManagementSystemApplication()
