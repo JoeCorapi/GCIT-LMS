@@ -78,12 +78,10 @@ def validateDate():
     while True:
         date = input('Enter new due date: ')  
         try:
-            validatedDate = datetime.datetime.strptime(date, '%Y-%M-%D %H:%M')
+            validatedDate = datetime.datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+            return validatedDate  
         except ValueError:
-            print("Incorrect data format, should be YYYY-MM-DD HH:MM")
-        print(validatedDate)
-    return validatedDate
-
+            print("Incorrect date format, should be YYYY-MM-DD HH:MM:SS")
 
 def getValidInput(validLength):
     while True:
@@ -459,7 +457,7 @@ def admin():
         bookId = validateInt('Enter bookId: ')
         branchId = validateInt('Enter branchId: ')
         cardNo = validateInt('Enter cardNo: ')
-        dueDate = input('Enter new due date: ')      
+        dueDate = validateDate()   
 
         callStoredProcedure('overrideDueDate', (bookId, branchId, cardNo, dueDate))
         cnx.commit()
@@ -471,7 +469,9 @@ def libraryManagementSystemApplication():
     while True:
         libraryMenuHandler(activeState)
 
-activeState = State.MAIN
-libraryManagementSystemApplication()
+#activeState = State.MAIN
+#libraryManagementSystemApplication()
+
+validateDate()
 
 cnx.close()
