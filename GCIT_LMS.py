@@ -45,6 +45,18 @@ def displayResultSet(resultSet, quitMenu=False):
     if quitMenu == True:
         print(str(i) + ') Quit to menu?')    
 
+def validateInt():
+    while True:
+        validatable = input()
+        try:
+            validated = int(validatable)
+            if validated < 0:  
+                print('Input must be a non-negative integer, try again')
+                continue
+            return validated
+        except ValueError:
+            print('Input must consist solely of only numbers')  
+
 def getValidInput(validLength):
     while True:
         try:
@@ -176,16 +188,9 @@ def lib3(name, address):
             numCopies = getQueryColumn('getNumCopies', 0, (branchId, bookId))[0]
             print('Existing number of copies: '+ str(numCopies)+'\n')
 
-            while True:
-                copies = input('Enter new number of copies: \n')
-                try:
-                    validatedCopies = int(copies)
-                    if validatedCopies < 0:  
-                        print('Input must be a non-negative integer, try again')
-                        continue
-                    break
-                except ValueError:
-                    print('Input must be a non-negative integer, please try again')     
+            print('Enter new number of copies: \n')
+            validatedCopies = validateInt()
+   
             
             callStoredProcedure('updateNumCopies', (bookId, branchId, validatedCopies))
             cnx.commit()
@@ -195,9 +200,11 @@ def lib3(name, address):
             return(activeState)
 
 def borr1():
-    cardNo = int(input('Enter your Card Number:\n'))
+    print('Enter your Card Number:\n')
+    cardNo = validateInt()
     while cardNo not in getQueryColumn('getBorrowerCardNumbers', 0):
-        cardNo = int(input('The card number you entered is not in our system, please try again\nEnter your Card Number:\n'))
+        print('That card number is not in our system. Please enter a valid card number number:\n')
+        cardNo = validateInt()
 
     global activeState
     global cnx
@@ -205,12 +212,14 @@ def borr1():
     while True:
         print('1) Check out a book\n2) Return a book\n3) Quit to previous \n')
         userSeleciton = getValidInput(3)
-
+        
         ##CHECKOUT BOOKS
         if userSeleciton == 1:
             branchNameList = getQueryColumn('getBranches',0)
             branchAddressList = getQueryColumn('getBranches',1)
+
             displayResultSet(listCombiner(branchNameList, branchAddressList, ', '), True)
+            print('Pick the Branch you want to check out from:')
 
             userSelection = getValidInput(len(branchNameList)+1)
 
@@ -223,14 +232,11 @@ def borr1():
             else:
                 branchId = getQueryColumn('getBranchId', 0, (branchName, branchAddress))[0]
 
-                bookTitlesList = getQueryColumn('getBooksB', 0, (branchId,))
-                bookAuthorsList = getQueryColumn('getBooksB', 1, (branchId,))
+                bookTitlesList = getQueryColumn('getBooksBranch', 0, (branchId,))
+                bookAuthorsList = getQueryColumn('getBooksBranch', 1, (branchId,))
 
-                print(bookTitlesList)
-                print(bookAuthorsList)
-
-                print('Pick the Book you want to check out:\n')
                 displayResultSet(listCombiner(bookTitlesList, bookAuthorsList, ' by '), True)
+                print('Pick the Book you want to check out:\n')
 
                 userSelection = getValidInput(len(bookTitlesList)+1)
                 if userSelection == (len(bookTitlesList)+1):
@@ -239,14 +245,18 @@ def borr1():
                 bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
 
                 callStoredProcedure('checkOutBook', (bookId, branchId, cardNo))
-                cnx.commit
+                cnx.commit()
                 print('Book checkout complete.')
+
     ##RETURN BOOKS
+
         elif userSeleciton == 2:
             branchNameList = getQueryColumn('getBranches',0)
             branchAddressList = getQueryColumn('getBranches',1)
             displayResultSet(listCombiner(branchNameList, branchAddressList, ', '), True)
 
+            print('\nPick the Branch you want to return to:')
+
             userSelection = getValidInput(len(branchNameList)+1)
 
             branchName = branchNameList[userSelection-1]
@@ -258,13 +268,10 @@ def borr1():
             else:
                 branchId = getQueryColumn('getBranchId', 0, (branchName, branchAddress))[0]
 
-                bookTitlesList = getQueryColumn('getBooksB', 0, (branchId,))
-                bookAuthorsList = getQueryColumn('getBooksB', 1, (branchId,))
+                bookTitlesList = getQueryColumn('getBorrLoansFromBr', 0, (cardNo, branchId))
+                bookAuthorsList = getQueryColumn('getBorrLoansFromBr', 1, (cardNo, branchId,))
 
-                print(bookTitlesList)
-                print(bookAuthorsList)
-
-                print('Pick the Book you want to check out:\n')
+                print('Pick the Book you want to return:\n')
                 displayResultSet(listCombiner(bookTitlesList, bookAuthorsList, ' by '), True)
 
                 userSelection = getValidInput(len(bookTitlesList)+1)
@@ -273,9 +280,9 @@ def borr1():
 
                 bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
 
-                callStoredProcedure('checkOutBook', (bookId, branchId, cardNo))
-                cnx.commit
-                print('Book checkout complete.')
+                callStoredProcedure('returnBook', (bookId, branchId, cardNo))
+                cnx.commit()
+                print('Book return complete.')
         else:
             activeState = State.MAIN
             return(activeState)
