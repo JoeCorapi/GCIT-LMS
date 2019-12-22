@@ -433,11 +433,10 @@ def admin():
         userSelection = getValidInput(3)
 
         if userSelection == 1:
-            cardNo = validateInt('Enter borrower card number: ')
             borrowerName = validateString('Enter borrower name: ')
             borrowerAddress = validateString('Enter borrower address: ')
             borrowerPhone = validateInt('Enter borrower phone: ')
-            callStoredProcedure('adminAddBorr', (cardNo, borrowerName, borrowerAddress, borrowerPhone))
+            callStoredProcedure('adminAddBorr', (borrowerName, borrowerAddress, borrowerPhone))
             cnx.commit()
 
         elif userSelection == 2:
