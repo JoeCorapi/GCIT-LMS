@@ -478,7 +478,7 @@ def admin():
         cardNo = validateInt('Enter cardNo: ')
         dueDate = validateDate()   
         
-        callStoredProcedure('overrideDueDateTest', (bookId, branchId, cardNo, dueDate))
+        callStoredProcedure('overrideDueDate', (bookId, branchId, cardNo, dueDate))
     else:
         activeState = State.MAIN
         return activeState
