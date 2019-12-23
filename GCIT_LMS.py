@@ -2,10 +2,6 @@ from enum import Enum
 import datetime
 import mysql.connector
 
-cnx = mysql.connector.connect(user='root', password='jacmsq5903',
-                              host='localhost',
-                              database='library')
-
 def preparedStatement(statement):
     cursor = cnx.cursor()
     sql = (statement)
