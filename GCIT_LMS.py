@@ -1,19 +1,21 @@
 from enum import Enum
 import datetime
 import mysql.connector
+from mysql.connector import Error
 
-def preparedStatement(statement):
-    cursor = cnx.cursor()
-    sql = (statement)
-    cursor.execute(sql)
-    resultSet = cursor.fetchall()
-    i=1
-    for row in resultSet:
-        print(str(i) + ') ' + row[0])
-        i += 1
-    cursor.close
+#def preparedStatement(statement):
+#    cursor = cnx.cursor()
+#    sql = (statement)
+#    cursor.execute(sql)
+#    resultSet = cursor.fetchall()
+#    i=1
+#    for row in resultSet:
+#        print(str(i) + ') ' + row[0])
+#        i += 1
+#    cursor.close
 
 def callStoredProcedure(storedProcedure, args=()):
+    cnx = None
     try: 
         cnx = mysql.connector.connect(user='root', 
                                        password='jacmsq5903',
@@ -23,14 +25,18 @@ def callStoredProcedure(storedProcedure, args=()):
             cursor = cnx.cursor()
             cursor.callproc(storedProcedure, args)   
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        global activeState
+        activeState = State.MAIN
+        print("Unable to connect to the library system.\n MySQL connection error", e)
+        exit()
     finally:
-        if (cnx.is_connected()):
+        if cnx: 
             cnx.commit()
             cursor.close()
             cnx.close()
 
 def getQueryColumn(storedProcedure, column, args=()): 
+    cnx = None
     try: 
         cnx = mysql.connector.connect(user='root', 
                                        password='jacmsq5903',
@@ -45,9 +51,12 @@ def getQueryColumn(storedProcedure, column, args=()):
                     resultAsList.append(columnIndex[column])
                 return resultAsList
     except Error as e:
-        print("Error while connecting to MySQL", e)
+        print("Unable to connect to the library system.\n MySQL connection error", e)
+        global activeState
+        activeState = State.MAIN
+        exit()
     finally:
-        if (cnx.is_connected()):
+        if cnx:
             cursor.close()
             cnx.close()
 
@@ -167,6 +176,7 @@ def lib2():
     branchNameList = getQueryColumn('getBranches', 0)
     branchAddressList = getQueryColumn('getBranches', 1)
     displayResultSet(listCombiner(branchNameList, branchAddressList, ', '), True)
+
 
     userSelection = getValidInput(len(branchNameList)+1)
 
