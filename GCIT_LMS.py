@@ -18,19 +18,42 @@ def preparedStatement(statement):
     cursor.close
 
 def callStoredProcedure(storedProcedure, args=()):
-    cursor = cnx.cursor()
-    cursor.callproc(storedProcedure, args)   
-    cursor.close 
+    try: 
+        cnx = mysql.connector.connect(user='root', 
+                                       password='jacmsq5903',
+                                       host='localhost',
+                                       database='library')
+        if cnx.is_connected():
+            cursor = cnx.cursor()
+            cursor.callproc(storedProcedure, args)   
+    except Error as e:
+        print("Error while connecting to MySQL", e)
+    finally:
+        if (cnx.is_connected()):
+            cnx.commit()
+            cursor.close()
+            cnx.close()
 
 def getQueryColumn(storedProcedure, column, args=()): 
-    cursor = cnx.cursor()
-    cursor.callproc(storedProcedure, args)
-    for result in cursor.stored_results():
-        resultAsList = []
-        for columnIndex in result.fetchall():
-            resultAsList.append(columnIndex[column])
-        return resultAsList
-    cursor.close
+    try: 
+        cnx = mysql.connector.connect(user='root', 
+                                       password='jacmsq5903',
+                                       host='localhost',
+                                       database='library')
+        if cnx.is_connected():
+            cursor = cnx.cursor()
+            cursor.callproc(storedProcedure, args)                              
+            for result in cursor.stored_results():
+                resultAsList = []
+                for columnIndex in result.fetchall():
+                    resultAsList.append(columnIndex[column])
+                return resultAsList
+    except Error as e:
+        print("Error while connecting to MySQL", e)
+    finally:
+        if (cnx.is_connected()):
+            cursor.close()
+            cnx.close()
 
 def listCombiner(list1, list2, joinForm):
     combinedList = []
@@ -166,7 +189,6 @@ def lib3(name, address):
     branchId = getQueryColumn('getBranchId', 0, (branchName, branchAddress))[0]
 
     global activeState
-    global cnx
 
     while activeState == State.LIB3:
         print('1) Update the details of the Library \n2) Add copies of a Book to the Branch \n3) Quit to previous \n')
@@ -200,7 +222,6 @@ def lib3(name, address):
                     branchName = updatedBranchName
             
             callStoredProcedure('updateBranch', (branchName, branchAddress, branchId))
-            cnx.commit()
 
         elif userSelection ==2:
             bookTitlesList = getQueryColumn('getAllBooks',0)
@@ -215,7 +236,6 @@ def lib3(name, address):
 
             bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
 
-            numCopies = getQueryColumn('getNumCopies', 0, (branchId, bookId))[0]
             print('Existing number of copies: '+ str(numCopies)+'\n')
 
             print('Enter new number of copies: \n')
@@ -223,7 +243,6 @@ def lib3(name, address):
    
             
             callStoredProcedure('updateNumCopies', (bookId, branchId, validatedCopies))
-            cnx.commit()
 
         else:
             activeState = State.LIB2
@@ -237,7 +256,6 @@ def borr1():
         cardNo = validateInt()
 
     global activeState
-    global cnx
 
     while True:
         print('1) Check out a book\n2) Return a book\n3) Quit to previous \n')
@@ -275,7 +293,6 @@ def borr1():
                 bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
 
                 callStoredProcedure('checkOutBook', (bookId, branchId, cardNo))
-                cnx.commit()
                 print('Book checkout complete.')
 
     ##RETURN BOOKS
@@ -311,7 +328,6 @@ def borr1():
                 bookId = getQueryColumn('getBookId', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
 
                 callStoredProcedure('returnBook', (bookId, branchId, cardNo))
-                cnx.commit()
                 print('Book return complete.')
         else:
             activeState = State.MAIN
@@ -327,7 +343,6 @@ def admin():
     print('6) Quit to menu')
     
     userSelection = getValidInput(6)
-    global cnx
     global activeState
 
     ##BOOK AUTHOR UPDATES##
@@ -357,7 +372,6 @@ def admin():
                 bookAuthor = validateString('Enter author name: ')
                 bookPublisherId = validateInt('Enter book publisher ID: ')
                 callStoredProcedure('adminAddNewBA', (bookTitle, bookAuthor, bookPublisherId))
-            cnx.commit()
 
         elif userSelection == 2:
             bookId = validateInt('Enter book ID: ')
@@ -366,13 +380,11 @@ def admin():
             bookAuthor = validateString('Enter new book author: ')
             bookPublisherId = validateInt('Enter book publisher ID: ')
             callStoredProcedure('adminUpdateBa', (bookId, authorId, bookPublisherId, bookAuthor, bookTitle))
-            cnx.commit()
 
         elif userSelection == 3:
             bookId = validateInt('Enter book ID: ')
             authorId = validateInt('Enter author ID: ') 
             callStoredProcedure('adminDeleteBa', (bookId, authorId))
-            cnx.commit()
         
     ### PUBLISHERS UPDATES ###
     elif userSelection == 2:
@@ -387,7 +399,6 @@ def admin():
             publisherAddress = validateString('Enter publisher address: ')
             publisherPhone = validateInt('Enter publisher phone number: ')
             callStoredProcedure('adminAddPub', (publisherName, publisherAddress, publisherPhone))
-            cnx.commit()
 
         elif userSelection == 2:
             publisherId = validateInt('Enter publisher ID: ')
@@ -395,12 +406,10 @@ def admin():
             publisherAddress = validateString('Enter new publisher address: ')
             publisherPhone = validateInt('Enter new publisher phone: ')
             callStoredProcedure('adminUpdatePub', (publisherId, publisherName, publisherAddress, publisherPhone))
-            cnx.commit()
 
         elif userSelection == 3:
             publisherId = validateInt('Enter publisher ID: ')
             callStoredProcedure('adminDeletePub', (publisherId,))
-            cnx.commit()
 
     ## BRANCH UPDATES ##
     elif userSelection == 3:
@@ -414,19 +423,16 @@ def admin():
             branchName = validateString('Enter branch name: ')
             branchAddress = validateString('Enter branch address: ')
             callStoredProcedure('adminAddBr', (branchName, branchAddress))
-            cnx.commit()
 
         elif userSelection == 2:
             branchId = validateInt('Enter branch ID: ')
             branchName = validateString('Enter new branch name: ')
             branchAddress = validateString('Enter new branch address: ')
             callStoredProcedure('adminUpdateBr', (branchId, branchName, branchAddress))
-            cnx.commit()
 
         elif userSelection == 3:
             branchId = validateInt('Enter branch ID: ')
-            callStoredProcedure('adminDeleteBr', (branchId,))
-            cnx.commit()        
+            callStoredProcedure('adminDeleteBr', (branchId,))    
 
     ## BORROWERS UPDATES ##
     elif userSelection == 4:
@@ -441,7 +447,6 @@ def admin():
             borrowerAddress = validateString('Enter borrower address: ')
             borrowerPhone = validateInt('Enter borrower phone: ')
             callStoredProcedure('adminAddBorr', (borrowerName, borrowerAddress, borrowerPhone))
-            cnx.commit()
 
         elif userSelection == 2:
             cardNo = validateInt('Enter borrower card number: ')
@@ -449,12 +454,10 @@ def admin():
             borrowerAddress = validateString('Enter borrower address: ')
             borrowerPhone = validateInt('Enter borrower phone: ')
             callStoredProcedure('adminUpdateBorr', (cardNo, borrowerName, borrowerAddress, borrowerPhone))
-            cnx.commit()
 
         elif userSelection == 3:
             cardNo = validateInt('Enter borrower card number: ')
-            callStoredProcedure('adminDeleteBorr', (cardNo,))
-            cnx.commit()                
+            callStoredProcedure('adminDeleteBorr', (cardNo,))            
 
     ### DUE DATE UPDATES##
     elif userSelection == 5:
@@ -464,7 +467,6 @@ def admin():
         dueDate = validateDate()   
         
         callStoredProcedure('overrideDueDateTest', (bookId, branchId, cardNo, dueDate))
-        cnx.commit()
     else:
         activeState = State.MAIN
         return activeState
@@ -475,5 +477,3 @@ def libraryManagementSystemApplication():
 
 activeState = State.MAIN
 libraryManagementSystemApplication()
-
-cnx.close()
