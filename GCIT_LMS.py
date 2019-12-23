@@ -173,27 +173,31 @@ def lib3(name, address):
         userSelection = getValidInput(3)
 
         if userSelection == 1:
-            print('You have chosen to update the Branch with Branch Id: '+str(branchId) +' and Branch Name: '+branchName+'.\nEnter ‘quit’ at any prompt to cancel operation\n')
+            print('You have chosen to update the Branch with Branch Id: '+str(branchId) +' and Branch Name: '+branchName+'.\nEnter \'quit\' at any prompt to cancel operation\n')
             print('Please enter new branch name or enter N/A for no change:')
 
             userSelection = input()
 
+            updatedBranchName=''
             if userSelection=='quit':
                 continue
             else:
                 if userSelection=='N/A':
-                    pass
+                    updatedBranchName = ''
                 else:
-                    branchName = userSelection
+                    updatedBranchName = userSelection
+
                 print('Please enter new branch address or enter N/A for no change:')
-                userSelection = input()    
+                userSelection = input()  
+
                 if userSelection=='quit':
                     continue
                 elif userSelection=='N/A':
                     pass
                 else:
                     branchAddress = userSelection
-                    print(branchAddress)
+                if updatedBranchName:
+                    branchName = updatedBranchName
             
             callStoredProcedure('updateBranch', (branchName, branchAddress, branchId))
             cnx.commit()
