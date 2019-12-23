@@ -236,6 +236,12 @@ def lib3(name, address):
 
             bookId = getQueryColumn('getBookID', 0, (bookTitlesList[userSelection-1], bookAuthorsList[userSelection-1]))[0]
 
+            numCopiesList = getQueryColumn('getNumCopies', 0, (branchId, bookId))
+            if numCopiesList:
+                numCopies = numCopiesList[0]
+            else:
+                numCopies = 0    
+
             print('Existing number of copies: '+ str(numCopies)+'\n')
 
             print('Enter new number of copies: \n')
