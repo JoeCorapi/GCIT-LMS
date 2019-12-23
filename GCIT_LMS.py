@@ -458,8 +458,8 @@ def admin():
         branchId = validateInt('Enter branchId: ')
         cardNo = validateInt('Enter cardNo: ')
         dueDate = validateDate()   
-
-        callStoredProcedure('overrideDueDate', (bookId, branchId, cardNo, dueDate))
+        
+        callStoredProcedure('overrideDueDateTest', (bookId, branchId, cardNo, dueDate))
         cnx.commit()
     else:
         activeState = State.MAIN
